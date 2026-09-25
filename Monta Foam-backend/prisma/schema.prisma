@@ -1,0 +1,192 @@
+// ===================================================================
+// Monta Foam - Prisma Schema
+// PostgreSQL + Prisma ORM
+// ===================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// -------------------------------------------------------------------
+// ENUMS
+// -------------------------------------------------------------------
+
+enum Role {
+  MASTER_ADMIN
+  ADMIN
+  USER
+}
+
+enum RequestStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+}
+
+enum OtpPurpose {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+// -------------------------------------------------------------------
+// USER
+// -------------------------------------------------------------------
+
+model User {
+  id            String   @id @default(uuid())
+  fullName      String
+  email         String   @unique
+  password      String? // nullable for Google OAuth users
+  role          Role     @default(USER)
+  isVerified    Boolean  @default(false)
+  isSuspended   Boolean  @default(false)
+  avatar        String?
+  provider      AuthProvider @default(LOCAL)
+  googleId      String?  @unique
+
+  // Refresh token rotation (hashed, store current valid token)
+  refreshTokenHash String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  otps              OTP[]
+  serviceRequests   ServiceRequest[]
+  notifications     Notification[]
+  auditLogs         AuditLog[]       @relation("ActorAuditLogs")
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+// -------------------------------------------------------------------
+// OTP (Email Verification / Password Reset)
+// -------------------------------------------------------------------
+
+model OTP {
+  id        String     @id @default(uuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  code      String // hashed OTP code
+  purpose   OtpPurpose @default(EMAIL_VERIFICATION)
+  expiresAt DateTime
+  consumed  Boolean    @default(false)
+
+  createdAt DateTime   @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("otps")
+}
+
+// -------------------------------------------------------------------
+// SERVICE
+// -------------------------------------------------------------------
+
+model Service {
+  id          String   @id @default(uuid())
+  title       String
+  slug        String   @unique
+  description String
+  image       String?
+  isActive    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  serviceRequests ServiceRequest[]
+
+  @@index([slug])
+  @@map("services")
+}
+
+// -------------------------------------------------------------------
+// SERVICE REQUEST
+// -------------------------------------------------------------------
+
+model ServiceRequest {
+  id        String        @id @default(uuid())
+
+  // userId is nullable to allow guest submissions
+  userId    String?
+  user      User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  serviceId String?
+  service   Service?      @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+
+  fullName  String
+  email     String
+  phone     String
+  notes     String?
+
+  status    RequestStatus @default(PENDING)
+
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([status])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("service_requests")
+}
+
+// -------------------------------------------------------------------
+// NOTIFICATION
+// -------------------------------------------------------------------
+
+model Notification {
+  id        String   @id @default(uuid())
+
+  // userId references the recipient (typically an admin/master-admin)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title     String
+  message   String
+  type      String?  // e.g. NEW_REQUEST, NEW_USER, EMAIL_VERIFIED, PASSWORD_RESET
+  metadata  Json?
+
+  isRead    Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+  @@map("notifications")
+}
+
+// -------------------------------------------------------------------
+// AUDIT LOG
+// -------------------------------------------------------------------
+
+model AuditLog {
+  id        String   @id @default(uuid())
+
+  action    String   // e.g. LOGIN_SUCCESS, LOGIN_FAILED, ROLE_CHANGED, USER_CREATED
+  actorId   String?
+  actor     User?    @relation("ActorAuditLogs", fields: [actorId], references: [id], onDelete: SetNull)
+
+  metadata  Json?
+  ipAddress String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+
+  @@index([action])
+  @@index([actorId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
