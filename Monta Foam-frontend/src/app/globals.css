@@ -1,0 +1,133 @@
+@import "tailwindcss";
+
+:root {
+  /* ── Monta Foam brand palette ────────────────────────────────────── */
+  --monta-blue: #1ba8d5;
+  --monta-dark: #0d3a52;
+  --monta-navy: #082435;
+  --monta-light: #e8f6fb;
+  --monta-gray: #f4f7f9;
+  --monta-text: #1a2a35;
+  --monta-muted: #6b8394;
+  --monta-border: #d4e8f0;
+
+  --ink-950: var(--monta-navy);
+  --steel-900: var(--monta-dark);
+  --steel-700: #19506b;
+  --frost-600: #147fa5;
+  --frost-500: #2497bd;
+  --cyan-400: var(--monta-blue);
+  --cyan-300: #68cce9;
+  --frost-white: var(--monta-gray);
+  --fog-400: #a8beca;
+  --fog-600: var(--monta-muted);
+
+  --background: var(--ink-950);
+  --foreground: var(--frost-white);
+}
+
+@theme inline {
+  --color-ink-950: var(--ink-950);
+  --color-steel-900: var(--steel-900);
+  --color-steel-700: var(--steel-700);
+  --color-frost-600: var(--frost-600);
+  --color-frost-500: var(--frost-500);
+  --color-cyan-400: var(--cyan-400);
+  --color-cyan-300: var(--cyan-300);
+  --color-frost-white: var(--frost-white);
+  --color-fog-400: var(--fog-400);
+  --color-fog-600: var(--fog-600);
+
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono-readout);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Frost-grain ambient texture ─────────────────────────────────────── */
+.frost-grain {
+  position: relative;
+}
+.frost-grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: radial-gradient(circle at 1px 1px, var(--cyan-400) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+/* ── Panel-seam divider: insulated cold-room wall lines ─────────────── */
+.seam-line {
+  position: relative;
+}
+.seam-line::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--fog-600) 20%, var(--fog-600) 80%, transparent);
+  opacity: 0.35;
+}
+
+/* ── Thermal gauge vertical divider ──────────────────────────────────── */
+.thermal-gauge {
+  position: relative;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, var(--cyan-400) 15%, var(--cyan-400) 85%, transparent);
+  opacity: 0.4;
+}
+
+/* ── Focus visibility (accessibility) ────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--cyan-400);
+  outline-offset: 3px;
+}
+
+/* ── Reduced motion ───────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Custom scrollbar ─────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--ink-950);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--steel-700);
+  border: 2px solid var(--ink-950);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--frost-600);
+}
+
+/* ── Selection ────────────────────────────────────────────────────────── */
+::selection {
+  background: var(--cyan-400);
+  color: var(--ink-950);
+}
